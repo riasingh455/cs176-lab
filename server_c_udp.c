@@ -60,7 +60,7 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
 
-    printf("UDP server listening on port %d\n", port);
+    // printf("UDP server listening on port %d\n", port);
 
     len = sizeof(cliaddr);
     while (1) {
