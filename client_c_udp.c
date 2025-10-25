@@ -9,7 +9,7 @@
 #include <netinet/in.h>
 #include <unistd.h>
 
-#define MAXLINE 128
+#define MAXLINE 1024
 
 int main(int argc, char *argv[]) {
     if (argc != 3) {
@@ -24,7 +24,6 @@ int main(int argc, char *argv[]) {
     char sendbuff[MAXLINE], recvbuff[MAXLINE];
     socklen_t addrlen = sizeof(servaddr);
 
-    // Create socket
     sockfd = socket(AF_INET, SOCK_DGRAM, 0);
     if (sockfd < 0) {
         perror("socket creation failed");
@@ -36,11 +35,17 @@ int main(int argc, char *argv[]) {
     servaddr.sin_addr.s_addr = inet_addr(server_ip);
     servaddr.sin_port = htons(port);
 
-    // Get user input
-    printf("Enter string: ");
-    fgets(sendbuff, sizeof(sendbuff), stdin);
 
-    // Send message
+    printf("Enter string: ");
+
+    size_t total = 0;
+    int ch;
+    while ((ch = getchar()) != '\n' && ch != EOF && total < sizeof(sendbuff) - 1) {
+        sendbuff[total++] = ch;
+    }
+    sendbuff[total] = '\0';
+
+
     if (sendto(sockfd, sendbuff, strlen(sendbuff), 0,
                (struct sockaddr*)&servaddr, addrlen) < 0) {
         perror("sendto failed");
@@ -48,18 +53,16 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
 
-    // Receive responses
     while (1) {
         bzero(recvbuff, sizeof(recvbuff));
         int n = recvfrom(sockfd, recvbuff, sizeof(recvbuff) - 1, 0,
                          (struct sockaddr*)&servaddr, &addrlen);
         if (n <= 0) {
-            break;  // no more data
+            break;  
         }
         recvbuff[n] = '\0';
         printf("From server: %s\n", recvbuff);
 
-        // If server sent final single digit or error, it won't send more
         if (strlen(recvbuff) == 1 || strncmp(recvbuff, "Sorry", 5) == 0) {
             break;
         }

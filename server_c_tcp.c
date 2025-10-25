@@ -9,7 +9,7 @@
 #include <unistd.h>   
 #include <ctype.h>  
 
-#define MAX 128
+#define MAX 1024
 #define SA struct sockaddr
 
 int is_all_digits(const char *str) {

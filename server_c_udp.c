@@ -1,4 +1,3 @@
-// server_c_udp.c
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -9,12 +8,11 @@
 #include <netinet/in.h>
 #include <unistd.h>
 
-#define MAXLINE 128
+#define MAXLINE 1024
 
 int is_all_digits(const char *str) {
     for (int i = 0; str[i] != '\0'; i++) {
-        if (str[i] == '\n') continue;
-        if (!isdigit(str[i])) return 0;
+        if (!isdigit((unsigned char)str[i])) return 0;
     }
     return 1;
 }
@@ -22,9 +20,17 @@ int is_all_digits(const char *str) {
 int sum_digits(const char *str) {
     int sum = 0;
     for (int i = 0; str[i] != '\0'; i++) {
-        if (isdigit(str[i])) sum += str[i] - '0';
+        if (isdigit((unsigned char)str[i])) sum += str[i] - '0';
     }
     return sum;
+}
+
+void trim(char *str) {
+    int len = strlen(str);
+    while (len > 0 && (str[len - 1] == '\n' || str[len - 1] == '\r' || str[len - 1] == ' ')) {
+        str[len - 1] = '\0';
+        len--;
+    }
 }
 
 void int_to_str(int num, char *buff) {
@@ -51,7 +57,7 @@ int main(int argc, char *argv[]) {
 
     bzero(&servaddr, sizeof(servaddr));
     servaddr.sin_family = AF_INET;
-    servaddr.sin_addr.s_addr = htonl(INADDR_LOOPBACK); 
+    servaddr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
     servaddr.sin_port = htons(port);
 
     if (bind(sockfd, (struct sockaddr*)&servaddr, sizeof(servaddr)) < 0) {
@@ -59,8 +65,6 @@ int main(int argc, char *argv[]) {
         close(sockfd);
         exit(1);
     }
-
-    // printf("UDP server listening on port %d\n", port);
 
     len = sizeof(cliaddr);
     while (1) {
@@ -73,6 +77,7 @@ int main(int argc, char *argv[]) {
             continue;
         }
         buffer[n] = '\0';
+        trim(buffer);
 
         if (!is_all_digits(buffer)) {
             char msg[] = "Sorry, cannot compute!";
@@ -83,17 +88,18 @@ int main(int argc, char *argv[]) {
 
         int sum = sum_digits(buffer);
         char sendbuff[MAXLINE];
-        while (sum >= 10) {
-            int_to_str(sum, sendbuff);
+        int_to_str(sum, sendbuff);
+
+        while (strlen(sendbuff) > 1) {
             sendto(sockfd, sendbuff, strlen(sendbuff), 0,
-                   (struct sockaddr*)&cliaddr, len);
+                (struct sockaddr*)&cliaddr, len);
             sum = sum_digits(sendbuff);
+            int_to_str(sum, sendbuff);
         }
 
-        int_to_str(sum, sendbuff);
         sendto(sockfd, sendbuff, strlen(sendbuff), 0,
-               (struct sockaddr*)&cliaddr, len);
-    }
+            (struct sockaddr*)&cliaddr, len);
+            }
 
     close(sockfd);
     return 0;

@@ -7,7 +7,7 @@
 #include <strings.h> 
 #include <sys/socket.h>
 #include <unistd.h> 
-#define MAX 128
+#define MAX 1024
 #define SA struct sockaddr
 
 //Portions of the socket setup code were adapted from:
